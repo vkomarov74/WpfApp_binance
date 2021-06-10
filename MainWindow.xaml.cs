@@ -48,10 +48,36 @@ namespace WpfApp_binance
 
         }
 
-        const string FWebSocketUrl = "wss://stream.binance.com:9443";
+        const string FWebSocketUrl = "wss://stream.binance.com:9443/ws/bnbbtc@depth";//"wss://stream.binance.com:9443";
 
+
+        private static async Task Echo()
+        {
+            using (ClientWebSocket ws = new ClientWebSocket())
+            {
+                Uri serverUri = new Uri(FWebSocketUrl);
+                await ws.ConnectAsync(serverUri, CancellationToken.None);
+                while (ws.State == WebSocketState.Open)
+                {
+                    Console.Write("Input message ('exit' to exit): ");
+                    string msg = Console.ReadLine();
+                    if (msg == "exit")
+                    {
+                        break;
+                    }
+                    ArraySegment<byte> bytesToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg));
+                    await ws.SendAsync(bytesToSend, WebSocketMessageType.Text, true, CancellationToken.None);
+                    ArraySegment<byte> bytesReceived = new ArraySegment<byte>(new byte[1024]);
+                    WebSocketReceiveResult result = await ws.ReceiveAsync(bytesReceived, CancellationToken.None);
+                    Console.Write(Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count));
+                }
+            }
+        }
         private void btnWebSocket_Click(object sender, RoutedEventArgs e)
         {
+
+            Task t = Echo();
+            t.Wait();
         }
     }
 }
